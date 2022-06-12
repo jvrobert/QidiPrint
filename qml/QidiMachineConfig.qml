@@ -1,10 +1,10 @@
-import UM 1.2 as UM
-import Cura 1.0 as Cura
+import UM 1.5 as UM
+import Cura 1.5 as Cura
 
-import QtQuick 2.2
-import QtQuick.Controls 1.1
-import QtQuick.Layouts 1.1
-import QtQuick.Window 2.1
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import QtQuick.Window 2.2
 
 Cura.MachineAction
 {
@@ -138,76 +138,67 @@ Cura.MachineAction
             {
                 width: Math.round(parent.width * 0.5)
                 spacing: UM.Theme.getSize("default_margin").height
-
-                ScrollView
+                ListView
                 {
-                    id: objectListContainer
-                    frameVisible: true
+                    id: listview
+
                     width: parent.width
                     height: base.height - contentRow.y - discoveryTip.height
 
-                    Rectangle
+                    ScrollBar.vertical: UM.ScrollBar {}
+                    clip: true
+
+                    model: manager.foundDevices
+                    onModelChanged:
                     {
-                        parent: viewport
-                        anchors.fill: parent
-                        color: palette.light
+                        var selectedKey = manager.getStoredKey();
+                        for(var i = 0; i < model.length; i++) {
+                            if(model[i].name == selectedKey)
+                            {
+                                currentIndex = i;
+                                return
+                            }
+                        }
+                        currentIndex = -1;
                     }
-
-                    ListView
+                    currentIndex: -1
+                    onCurrentIndexChanged:
                     {
-                        id: listview
-                        model: manager.foundDevices
-                        onModelChanged:
-                        {
-                            var selectedKey = manager.getStoredKey();
-                            for(var i = 0; i < model.length; i++) {
-                                if(model[i].name == selectedKey)
-                                {
-                                    currentIndex = i;
-                                    return
-                                }
-                            }
-                            currentIndex = -1;
-                        }
+                        base.selectedPrinter = listview.model[currentIndex];                            
+                    }
+                    Component.onCompleted: 
+                    {
+                        manager.runDiscovery()
+                    }
+                    delegate: Rectangle
+                    {
+                        height: childrenRect.height
+                        color: ListView.isCurrentItem ? palette.highlight : index % 2 ? palette.base : palette.alternateBase
                         width: parent.width
-                        currentIndex: -1
-                        onCurrentIndexChanged:
+                        Label
                         {
-                            base.selectedPrinter = listview.model[currentIndex];                            
+                            anchors.left: parent.left
+                            anchors.leftMargin: UM.Theme.getSize("default_margin").width
+                            anchors.right: parent.right
+                            text: listview.model[index].name
+                            color: parent.ListView.isCurrentItem ? palette.highlightedText : palette.text
+                            elide: Text.ElideRight
                         }
-                        Component.onCompleted: 
-                        {
-                            manager.runDiscovery()
-                        }
-                        delegate: Rectangle
-                        {
-                            height: childrenRect.height
-                            color: ListView.isCurrentItem ? palette.highlight : index % 2 ? palette.base : palette.alternateBase
-                            width: parent.width
-                            Label
-                            {
-                                anchors.left: parent.left
-                                anchors.leftMargin: UM.Theme.getSize("default_margin").width
-                                anchors.right: parent.right
-                                text: listview.model[index].name
-                                color: parent.ListView.isCurrentItem ? palette.highlightedText : palette.text
-                                elide: Text.ElideRight
-                            }
 
-                            MouseArea
+                        MouseArea
+                        {
+                            anchors.fill: parent;
+                            onClicked:
                             {
-                                anchors.fill: parent;
-                                onClicked:
+                                if(!parent.ListView.isCurrentItem)
                                 {
-                                    if(!parent.ListView.isCurrentItem)
-                                    {
-                                        parent.ListView.view.currentIndex = index;
-                                    }
+                                    parent.ListView.view.currentIndex = index;
                                 }
                             }
                         }
                     }
                 }
+
                 Label
                 {
                     id: discoveryTip
@@ -387,16 +378,16 @@ Cura.MachineAction
                 id: addressField
                 width: parent.width
                 maximumLength: 40
-                validator: RegExpValidator
+                validator: RegularExpressionValidator
                 {
-                    regExp: /^((?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.){0,3}(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$/
+                    regularExpression: /^((?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.){0,3}(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$/
                 }
                 onAccepted: btnOk.clicked()
             }
         }
 
         rightButtons: [
-            Button {
+            Cura.PrimaryButton {
                 id: btnOk
                 text: catalog.i18nc("@action:button", "OK")
                 onClicked:
@@ -405,9 +396,8 @@ Cura.MachineAction
                     manualPrinterDialog.hide()
                 }
                 enabled: manualPrinterDialog.addressText.trim() != "" && manualPrinterDialog.validName
-                isDefault: true
             },
-            Button {
+            Cura.TertiaryButton {
                 text: catalog.i18nc("@action:button","Cancel")
                 onClicked:
                 {
