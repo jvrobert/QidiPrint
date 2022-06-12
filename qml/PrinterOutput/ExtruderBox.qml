@@ -1,13 +1,13 @@
 //Copyright (c) 2019 Ultimaker B.V.
 //Cura is released under the terms of the LGPLv3 or higher.
 
-import QtQuick 2.2
-import QtQuick.Controls 1.1
-import QtQuick.Controls.Styles 1.1
-import QtQuick.Layouts 1.1
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 
-import UM 1.2 as UM
-import Cura 1.0 as Cura
+import QtQuick.Layouts 1.3
+
+import UM 1.5 as UM
+import Cura 1.5 as Cura
 
 
 Item
@@ -202,7 +202,7 @@ Item
                 selectByMouse: true
                 maximumLength: 5
                 enabled: parent.enabled
-                validator: RegExpValidator { regExp: /^-?[0-9]{0,9}[.,]?[0-9]{0,10}$/ } //Floating point regex.
+                validator: RegularExpressionValidator { regularExpression: /^-?[0-9]{0,9}[.,]?[0-9]{0,10}$/ } //Floating point regex.
                 anchors.left: parent.left
                 anchors.leftMargin: UM.Theme.getSize("setting_unit_margin").width
                 anchors.right: unit.left
